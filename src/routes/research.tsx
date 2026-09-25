@@ -145,15 +145,66 @@ function ResearchPage() {
 
       <div className="card-surface space-y-5 p-6">
         <div className="space-y-2">
-          <Label htmlFor="material">What should AI analyse?</Label>
-          <Textarea
-            id="material"
-            rows={8}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Paste a research topic, an article, your notes, a question, or any complex information you want simplified."
-          />
+          <Label>Source</Label>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: "text", label: "Paste text" },
+                { id: "url", label: "From a link" },
+              ] as const
+            ).map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                aria-pressed={mode === m.id}
+                onClick={() => {
+                  setMode(m.id);
+                  setError("");
+                }}
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                  mode === m.id
+                    ? "border-primary bg-accent text-accent-foreground shadow-soft"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted",
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {mode === "text" ? (
+          <div className="space-y-2">
+            <Label htmlFor="material">What should AI analyse?</Label>
+            <Textarea
+              id="material"
+              rows={8}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste a research topic, an article, your notes, a question, or any complex information you want simplified."
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="source-url">Link to analyse</Label>
+            <div className="relative">
+              <Link2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="source-url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com/article"
+                className="pl-9"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The page is fetched and its readable text extracted automatically. Pages that require
+              a login may not be readable.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label>Output Style</Label>

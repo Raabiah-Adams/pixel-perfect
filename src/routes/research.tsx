@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Copy, RefreshCcw, Search, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Link2, Loader2, RefreshCcw, Search, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AiThinking, EmptyState, PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { fetchUrlText } from "@/lib/fetch-url.functions";
 import { cn } from "@/lib/utils";
 import { generateResearch, type OutputStyle, type ResearchResult } from "@/lib/ai-engine";
 

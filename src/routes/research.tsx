@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Copy, RefreshCcw, Search, Sparkles, Trash2 } from "lucide-react";
+import { Copy, Link2, Loader2, RefreshCcw, Search, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AiThinking, EmptyState, PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { fetchUrlText } from "@/lib/fetch-url.functions";
 import { cn } from "@/lib/utils";
 import { generateResearch, type OutputStyle, type ResearchResult } from "@/lib/ai-engine";
 
@@ -63,23 +65,61 @@ function EditableList({
 }
 
 function ResearchPage() {
+  const [mode, setMode] = useState<"text" | "url">("text");
   const [text, setText] = useState("");
+  const [url, setUrl] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
   const [style, setStyle] = useState<OutputStyle>("Quick Summary");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResearchResult | null>(null);
 
+  const analyse = (material: string) => {
+    setError("");
+    setLoading(true);
+    window.setTimeout(() => {
+      setResult(generateResearch(material, style));
+      setLoading(false);
+    }, 1300);
+  };
+
   const run = () => {
+    if (mode === "url") {
+      void runFromUrl();
+      return;
+    }
     if (text.trim().length < 20) {
       setError("Paste a topic, question or some text (at least a sentence) to analyse.");
       return;
     }
+    setSourceUrl("");
+    analyse(text);
+  };
+
+  const runFromUrl = async () => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setError("Paste a link to an article or page you'd like analysed.");
+      return;
+    }
     setError("");
-    setLoading(true);
-    window.setTimeout(() => {
-      setResult(generateResearch(text, style));
-      setLoading(false);
-    }, 1300);
+    setFetching(true);
+    try {
+      const { text: fetched, url: finalUrl } = await fetchUrlText({ data: { url: trimmed } });
+      setText(fetched);
+      setSourceUrl(finalUrl);
+      toast.success("Page loaded — analysing it now");
+      analyse(fetched);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Couldn't read that page. Check the link, or paste the text directly instead.",
+      );
+    } finally {
+      setFetching(false);
+    }
   };
 
   const copy = async () => {
@@ -105,15 +145,66 @@ function ResearchPage() {
 
       <div className="card-surface space-y-5 p-6">
         <div className="space-y-2">
-          <Label htmlFor="material">What should AI analyse?</Label>
-          <Textarea
-            id="material"
-            rows={8}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Paste a research topic, an article, your notes, a question, or any complex information you want simplified."
-          />
+          <Label>Source</Label>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: "text", label: "Paste text" },
+                { id: "url", label: "From a link" },
+              ] as const
+            ).map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                aria-pressed={mode === m.id}
+                onClick={() => {
+                  setMode(m.id);
+                  setError("");
+                }}
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                  mode === m.id
+                    ? "border-primary bg-accent text-accent-foreground shadow-soft"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted",
+                )}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {mode === "text" ? (
+          <div className="space-y-2">
+            <Label htmlFor="material">What should AI analyse?</Label>
+            <Textarea
+              id="material"
+              rows={8}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste a research topic, an article, your notes, a question, or any complex information you want simplified."
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="source-url">Link to analyse</Label>
+            <div className="relative">
+              <Link2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="source-url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com/article"
+                className="pl-9"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The page is fetched and its readable text extracted automatically. Pages that require
+              a login may not be readable.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label>Output Style</Label>
@@ -139,9 +230,13 @@ function ResearchPage() {
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <Button onClick={run} disabled={loading} size="lg" className="w-full sm:w-auto">
-          <Sparkles className="size-4" />
-          {loading ? "Analysing…" : "Analyse with AI"}
+        <Button onClick={run} disabled={loading || fetching} size="lg" className="w-full sm:w-auto">
+          {fetching ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4" />
+          )}
+          {fetching ? "Fetching page…" : loading ? "Analysing…" : "Analyse with AI"}
         </Button>
       </div>
 
@@ -158,6 +253,18 @@ function ResearchPage() {
                 AI Generated • Verify before relying on it
               </span>
             </div>
+
+            {sourceUrl ? (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex max-w-full items-center gap-1.5 truncate text-sm text-primary hover:underline"
+              >
+                <Link2 className="size-3.5 shrink-0" />
+                <span className="truncate">{sourceUrl}</span>
+              </a>
+            ) : null}
 
             <div className="card-surface bg-soft-gradient p-5">
               <h3 className="text-sm font-semibold">Executive Summary</h3>
@@ -209,6 +316,8 @@ function ResearchPage() {
                 onClick={() => {
                   setResult(null);
                   setText("");
+                  setUrl("");
+                  setSourceUrl("");
                 }}
               >
                 <Trash2 className="size-4" /> Clear
@@ -220,7 +329,7 @@ function ResearchPage() {
             <EmptyState
               icon={<Search className="size-5" />}
               title="Nothing analysed yet"
-              description="Paste your material above, pick an output style, and the AI will structure it into summaries, insights and next steps."
+              description="Paste your material or a link above, pick an output style, and the AI will structure it into summaries, insights and next steps."
             />
           </div>
         )}

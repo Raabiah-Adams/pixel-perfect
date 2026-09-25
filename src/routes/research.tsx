@@ -316,6 +316,8 @@ function ResearchPage() {
                 onClick={() => {
                   setResult(null);
                   setText("");
+                  setUrl("");
+                  setSourceUrl("");
                 }}
               >
                 <Trash2 className="size-4" /> Clear

@@ -65,23 +65,61 @@ function EditableList({
 }
 
 function ResearchPage() {
+  const [mode, setMode] = useState<"text" | "url">("text");
   const [text, setText] = useState("");
+  const [url, setUrl] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
   const [style, setStyle] = useState<OutputStyle>("Quick Summary");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResearchResult | null>(null);
 
+  const analyse = (material: string) => {
+    setError("");
+    setLoading(true);
+    window.setTimeout(() => {
+      setResult(generateResearch(material, style));
+      setLoading(false);
+    }, 1300);
+  };
+
   const run = () => {
+    if (mode === "url") {
+      void runFromUrl();
+      return;
+    }
     if (text.trim().length < 20) {
       setError("Paste a topic, question or some text (at least a sentence) to analyse.");
       return;
     }
+    setSourceUrl("");
+    analyse(text);
+  };
+
+  const runFromUrl = async () => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setError("Paste a link to an article or page you'd like analysed.");
+      return;
+    }
     setError("");
-    setLoading(true);
-    window.setTimeout(() => {
-      setResult(generateResearch(text, style));
-      setLoading(false);
-    }, 1300);
+    setFetching(true);
+    try {
+      const { text: fetched, url: finalUrl } = await fetchUrlText({ data: { url: trimmed } });
+      setText(fetched);
+      setSourceUrl(finalUrl);
+      toast.success("Page loaded — analysing it now");
+      analyse(fetched);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Couldn't read that page. Check the link, or paste the text directly instead.",
+      );
+    } finally {
+      setFetching(false);
+    }
   };
 
   const copy = async () => {

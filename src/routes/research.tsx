@@ -329,7 +329,7 @@ function ResearchPage() {
             <EmptyState
               icon={<Search className="size-5" />}
               title="Nothing analysed yet"
-              description="Paste your material above, pick an output style, and the AI will structure it into summaries, insights and next steps."
+              description="Paste your material or a link above, pick an output style, and the AI will structure it into summaries, insights and next steps."
             />
           </div>
         )}

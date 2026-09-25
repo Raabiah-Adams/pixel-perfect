@@ -320,9 +320,13 @@ const keywords = (text: string) => {
 
 export function generateResearch(text: string, style: OutputStyle): ResearchResult {
   const topics = keywords(text);
-  const topic = topics[0] ? topics[0] : "the material provided";
-  const second = topics[1] || "the surrounding context";
-  const third = topics[2] || "implementation";
+  const topic =
+    topics[0] && topics[1]
+      ? `${topics[0]} ${topics[1]}`
+      : topics[0] || "the material provided";
+  const second = topics[2] || "the surrounding context";
+  const third = topics[3] || topics[1] || "implementation";
+
   const sentences = text
     .replace(/\s+/g, " ")
     .split(/(?<=[.!?])\s+/)

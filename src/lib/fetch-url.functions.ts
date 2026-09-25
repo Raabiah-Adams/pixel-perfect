@@ -6,7 +6,7 @@ import { z } from "zod";
  * No external APIs — just a plain fetch plus HTML stripping.
  */
 export const fetchUrlText = createServerFn({ method: "GET" })
-  .inputValidator((data) => z.object({ url: z.string().url() }).parse(data))
+  .validator((data) => z.object({ url: z.string().url() }).parse(data))
   .handler(async ({ data }) => {
     let parsed: URL;
     try {

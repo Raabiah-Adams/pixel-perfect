@@ -230,9 +230,13 @@ function ResearchPage() {
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <Button onClick={run} disabled={loading} size="lg" className="w-full sm:w-auto">
-          <Sparkles className="size-4" />
-          {loading ? "Analysing…" : "Analyse with AI"}
+        <Button onClick={run} disabled={loading || fetching} size="lg" className="w-full sm:w-auto">
+          {fetching ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4" />
+          )}
+          {fetching ? "Fetching page…" : loading ? "Analysing…" : "Analyse with AI"}
         </Button>
       </div>
 

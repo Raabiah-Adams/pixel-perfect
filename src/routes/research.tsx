@@ -254,6 +254,18 @@ function ResearchPage() {
               </span>
             </div>
 
+            {sourceUrl ? (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex max-w-full items-center gap-1.5 truncate text-sm text-primary hover:underline"
+              >
+                <Link2 className="size-3.5 shrink-0" />
+                <span className="truncate">{sourceUrl}</span>
+              </a>
+            ) : null}
+
             <div className="card-surface bg-soft-gradient p-5">
               <h3 className="text-sm font-semibold">Executive Summary</h3>
               <Textarea
